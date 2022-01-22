@@ -1,5 +1,3 @@
-Part 1 - 
-
 1. exec.c is printing the current process pid, and then sleeping for 30 seconds. If there is no program argument passed in, no program executes and it exits, 
 otherwise it executes the command passed in argv[1].
 
