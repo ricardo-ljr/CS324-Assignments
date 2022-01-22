@@ -1,0 +1,163 @@
+Part 1 - 
+
+1. exec.c is printing the current process pid, and then sleeping for 30 seconds. If there is no program argument passed in, no program executes and it exits, 
+otherwise it executes the command passed in argv[1].
+
+2. The final printf() statement will only get executed if there was an error when runnig execve()
+
+3. ./exec /bin/cat
+Program "./exec" has pid 1215992. Sleeping.
+Running exec of "/bin/cat"
+
+4. 
+./exec /bin/cat
+Program "./exec" has pid 1218522. Sleeping.
+Running exec of "/bin/cat"
+
+./exec /bin/cat
+Program "./exec" has pid 1220095. Sleeping.
+Running exec of "/bin/cat"
+
+// During Initial 30-second sleep()
+ps -p 1220095 -o user,pid,ppid,state,ucmd
+USER         PID    PPID S CMD
+rljess   1220095 1214195 S exec
+
+// After the first 30 seconds before the end of the program
+ps -p 1220095 -o user,pid,ppid,state,ucmd
+USER         PID    PPID S CMD
+rljess   1220095 1214195 S cat
+
+5. All the fields of the outout are the same, except the last one for command, because I believe that the outputs are being
+generated from different processes at the time of execution.
+
+6. /exec /does-not-exist
+Program "./exec" has pid 1220794. Sleeping.
+Running exec of "/does-not-exist"
+End of program "./exec".
+
+There was an error when running execve because the program doesn't exist, therefore exec.c will output the final printf message saying the program ended.
+
+7. Once the program runs, it prints the programs pid, which then the process is forked.
+After that, different printf statements are called on depending on whether the child or
+parent process calls the different sections.
+
+8. The parent process runs sections A and C, while the child process runs process A and B.
+Each process is exited before running section D.
+
+9. 
+./fork 
+Starting program; process has pid 1912351
+Section A;  pid 1912351
+Section A;  pid 1912352
+Section C
+Section B
+Section B done sleeping
+
+ps -p 1912351 -p 1912352 -o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+rljess   1912351 1910466 S fork
+rljess   1912352 1912351 S  \_ fork
+
+ps -p 1912351 -p 1912352 -o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+rljess   1912351 1910466 S fork
+rljess   1912352 1912351 Z  \_ fork <defunct>
+
+10. The main difference between the output of the two commands is that in the second command, the child
+process has exited and became a zombie. The command printed also printed <defunct> to exhibit so as well.
+
+11.
+wait(&status);
+Line 34, after the else statement
+
+12.
+./fork 
+Starting program; process has pid 1914678
+Section A;  pid 1914678
+Section A;  pid 1914679
+Section B
+Section B done sleeping
+Section C
+Section C done sleeping
+
+ps -p 1914678 -p 1914679 -o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+rljess   1914678 1910466 S fork
+rljess   1914679 1914678 S  \_ fork
+
+ps -p 1914678 -p 1914679 -o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+rljess   1914678 1910466 S fork
+
+13. At first glance, the first output has both processes for the parent and the child, while in the second, it
+looks like the process child ended.
+
+14. 
+/fork 
+Starting program; process has pid 1952870
+Section A;  pid 1952870
+Section A;  pid 1952871
+Section C
+Section B
+Section C done sleeping
+
+ps -p 1952870 -p 1952871 -o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+rljess   1952870 1910466 S fork
+rljess   1952871 1952870 S  \_ fork
+
+ps -p 1952870 -p 1952871 -o user,pid,ppid,state,ucmd --forest
+USER         PID    PPID S CMD
+rljess   1952871       1 S fork
+
+15. Child process was inherited from parent and parent process ended, which then left only the child process running. The child process also has
+a different PPID in the second command because the parent process ended.
+
+16. 
+BEFORE FORK
+SECTION A
+SECTION C
+SECTION A
+SECTION B
+
+17. The parent process runs in section A and C, and right after, the child process runs in section A and B. The parent process
+ends and the child process starts.
+
+18. 
+./fork 
+Starting program; process has pid 1958640
+Section A;  pid 1958640
+Section A;  pid 1958641
+Section B
+hello from Section B
+Section C
+
+19. 
+echo foobar | ./fork /bin/cat
+Starting program; process has pid 1962703
+Section A;  pid 1962703
+Section A;  pid 1962704
+Section B
+Program "./fork" has pid 1962704. Sleeping.
+Running exec of "/bin/cat"
+foobar
+Section C
+
+20. 
+echo foobar | ./fork /bin/cat
+Starting program; process has pid 1964284
+Section A;  pid 1964284
+Section A;  pid 1964285
+Section B
+Program "./fork" has pid 1964285. Sleeping.
+Running exec of "/bin/cat"
+Section C
+
+BEFORE FORK
+SECTION A
+SECTION A
+SECTION B
+foobar
+SECTION C
+
