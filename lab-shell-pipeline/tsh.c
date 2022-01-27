@@ -106,6 +106,91 @@ int main(int argc, char **argv)
 */
 void eval(char *cmdline) 
 {
+    // printf("You entered: %s\n", cmdline);
+
+    FILE* fd[MAXARGS]; // file desriptor
+    char *argv[MAXARGS];
+    int cmds[MAXARGS];
+    int stdin_redir[MAXARGS];
+    int stdout_redir[MAXARGS];
+
+    int bg = parseline(cmdline, argv);
+
+    int status;
+
+    int pid[MAXARGS];
+
+    if (!builtin_cmd(argv)) {
+        int cmdindex = parseargs(argv, cmds, stdin_redir, stdout_redir);
+
+        int pipes[cmdindex - 1][2];
+
+        for (int i = 0; i < cmdindex; ++i) {
+
+            if (i != cmdindex - 1) {
+                if (pipe(pipes[i]) < 0) {
+                    exit(0);
+                }
+            }
+
+            pid[i] = fork();
+
+            if (pid[i] == 0) {
+
+                setpgid(pid[i], pid[0]);
+                if (stdin_redir[i] != -1) { // Check for input and output redir
+                    fd[2 * i] = fopen(argv[stdin_redir[i]], "r");
+                    int filenum = fileno(fd[2 * i]);
+                    dup2(filenum, 0);
+                }
+
+                if (stdout_redir[i] != -1) {
+                    int indx = ((2 * i) + 1);
+                    fd[indx] = fopen(argv[stdout_redir[i]], "w");
+                    int out = fileno(fd[indx]);
+                    dup2(out, 1);
+                }
+
+                if (i > 0) {
+                    dup2(pipes[i - 1][0], STDIN_FILENO); // default standard input file descriptor number which is 0
+
+                    close(pipes[i][0]);
+                }
+
+                if (i != cmdindex - 1) {
+                    dup2(pipes[i][1], STDOUT_FILENO);
+
+                    close(pipes[i][0]);
+                    close(pipes[i][1]);
+                }
+
+                
+
+                execv(argv[cmds[i]], &argv[cmds[i]]);
+                // printf("It works!");
+                exit(1);
+            } else {
+                if (i != cmdindex - 1) {
+                    close(pipes[i][1]);
+                }
+
+                if (i > 0) {
+                    close(pipes[i - 1][0]);
+                }
+            }
+        }
+
+        if(!bg){
+            int process;
+            for(int i = 0; i < cmdindex; i++){
+                while((process=waitpid(pid[i], &status, 0))!= -1){
+                }
+            }
+        }
+    }
+
+
+
     return;
 }
 
@@ -233,6 +318,12 @@ int parseline(const char *cmdline, char **argv)
  */
 int builtin_cmd(char **argv) 
 {
+
+    if (strcmp(argv[0], "quit") == 0) {
+        // printf("%s\n", "Exiting program");
+        exit(0);
+    }
+
     return 0;     /* not a builtin command */
 }
 
