@@ -153,7 +153,6 @@ void eval(char *cmdline)
 
                 if (i > 0) {
                     dup2(pipes[i - 1][0], STDIN_FILENO); // default standard input file descriptor number which is 0
-
                     close(pipes[i][0]);
                 }
 
@@ -163,8 +162,6 @@ void eval(char *cmdline)
                     close(pipes[i][0]);
                     close(pipes[i][1]);
                 }
-
-                
 
                 execv(argv[cmds[i]], &argv[cmds[i]]);
                 // printf("It works!");
@@ -180,6 +177,7 @@ void eval(char *cmdline)
             }
         }
 
+        // After all commands in the pipeline have been started (i.e., with execve()), it should then call waitpid() on each process ID
         if(!bg){
             int process;
             for(int i = 0; i < cmdindex; i++){
