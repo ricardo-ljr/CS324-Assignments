@@ -137,7 +137,8 @@ void eval(char *cmdline)
 
             if (pid[i] == 0) {
 
-                setpgid(pid[i], pid[0]);
+                setpgid(pid[i], pid[0]); // Put the child process in its own process group
+                
                 if (stdin_redir[i] != -1) { // Check for input and output redir
                     fd[2 * i] = fopen(argv[stdin_redir[i]], "r");
                     int filenum = fileno(fd[2 * i]);
@@ -157,7 +158,7 @@ void eval(char *cmdline)
                 }
 
                 if (i != cmdindex - 1) {
-                    dup2(pipes[i][1], STDOUT_FILENO);
+                    dup2(pipes[i][1], STDOUT_FILENO); // default standard input file descriptor number which should be 1
 
                     close(pipes[i][0]);
                     close(pipes[i][1]);
@@ -167,6 +168,7 @@ void eval(char *cmdline)
                 // printf("It works!");
                 exit(1);
             } else {
+                
                 if (i != cmdindex - 1) {
                     close(pipes[i][1]);
                 }
@@ -186,8 +188,6 @@ void eval(char *cmdline)
             }
         }
     }
-
-
 
     return;
 }
