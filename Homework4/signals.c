@@ -11,7 +11,7 @@
 int foo;
 int block;
 
-void sig_handler1(int signum) {
+void sig_handler1(int signum) {  // Sigint and Sighup
 	printf("1\n"); fflush(stdout);
 	sleep(4);
 	printf("2\n"); fflush(stdout);
@@ -24,17 +24,17 @@ void sig_handler2(int signum) {
 	printf("9\n"); fflush(stdout);
 }
 
-void sig_handler3(int signum) {
+void sig_handler3(int signum) { // SIGTERM
 	printf("%d\n", foo); fflush(stdout);
 }
 
-void sig_handler4(int signum) {
+void sig_handler4(int signum) { // SIGPWR
 	if (foo > 0) {
 		foo = 6;
 	}
 }
 
-void sig_handler5(int signum) {
+void sig_handler5(int signum) { // SIGUSR1
 	foo = fork();
 	if (foo == 0) {
 		exit(7);
@@ -49,7 +49,7 @@ void sig_handler6(int signum) {
 	}
 }
 
-void sig_handler7(int signum) {
+void sig_handler7(int signum) { // SIGSYS
 	if (block) {
 		block = 0;
 	} else {
@@ -65,7 +65,7 @@ void sig_handler8(int signum) {
 	sigaction(SIGTERM, &sigact, NULL);
 }
 
-void sig_handler9(int signum) {
+void sig_handler9(int signum) { // SIGCHLD
 	int status;
 	waitpid(-1, &status, 0);
 	printf("%d\n", WEXITSTATUS(status)); fflush(stdout);
@@ -91,19 +91,19 @@ void install_sig_handlers() {
 
 	// SIGUSR1 and SIGUSR2
 	sigact.sa_handler = sig_handler4;
-	sigaction(30, &sigact, NULL);
+	sigaction(30, &sigact, NULL); // SIGPWR
 
 	sigact.sa_handler = sig_handler5;
-	sigaction(10, &sigact, NULL);
+	sigaction(10, &sigact, NULL); // SIGUSR1 
 
 	sigact.sa_handler = sig_handler6;
-	sigaction(16, &sigact, NULL);
+	sigaction(16, &sigact, NULL); // SIGSTKFLT
 
 	sigact.sa_handler = sig_handler7;
-	sigaction(31, &sigact, NULL);
+	sigaction(31, &sigact, NULL); // SIGSYS or SIGUNUSED 
 
 	sigact.sa_handler = sig_handler8;
-	sigaction(12, &sigact, NULL);
+	sigaction(12, &sigact, NULL); // SIGUSR2
 
 	sigact.sa_handler = sig_handler9;
 	sigaction(SIGCHLD, &sigact, NULL);
