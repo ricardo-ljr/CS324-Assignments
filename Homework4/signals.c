@@ -17,7 +17,7 @@ void sig_handler1(int signum) {  // Sigint and Sighup
 	printf("2\n"); fflush(stdout);
 }
 
-void sig_handler2(int signum) {
+void sig_handler2(int signum) { // SIGQUIT
 	printf("8\n"); fflush(stdout);
 	kill(getpid(), SIGINT);
 	sleep(4);

@@ -129,7 +129,6 @@ int main(int argc, char *argv[]) {
 		kill(pid, SIGTERM);
 		sleep(1);
 		break;
-
 	}
 	waitpid(pid, NULL, 0);
 }
