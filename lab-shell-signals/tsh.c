@@ -177,7 +177,7 @@ void eval(char *cmdline)
     FILE *fd[MAXARGS];   // file desriptor
     char *argv[MAXARGS]; // argv array
     int pid[MAXARGS];
-    int currpid;
+    int currpid = 0;
     int cmds[MAXARGS];
     int stdin_redir[MAXARGS];
     int stdout_redir[MAXARGS];
@@ -249,7 +249,7 @@ void eval(char *cmdline)
                 }
 
                 execv(argv[cmds[i]], &argv[cmds[i]]);
-                printf("%s: Command not found", argv[cmds[i]]);
+                printf("%s: Command not found\n", argv[cmds[i]]);
                 exit(1);
             }
             else
@@ -462,6 +462,146 @@ int builtin_cmd(char **argv)
  */
 void do_bgfg(char **argv)
 {
+
+    // Ensure that a command-li argument was passed to bg or fg, and print and error otherwise
+    char *cmd = argv[0];
+    // printf("%s", cmd);
+
+    if (!argv[1])
+    {
+        printf("%s command requires PID or %%jobid argument\n", cmd);
+        return;
+    }
+
+    // printf("%d", argv[1][0]);
+
+    if (isdigit(argv[1][0]) || argv[1][0] == '%') // Is it a PID or %jobid?
+    {
+        int i = 1;
+        while (argv[1][i] != 0)
+        {
+            // printf("%d", argv[1][0]);
+            if (!isdigit(argv[1][i]))
+            {
+                // printf("I'm here");
+                printf("%s: argument must be a PID or %%jobid \n", cmd);
+                return;
+            }
+            i++;
+        }
+    }
+    else
+    {
+        // printf("I'm here");
+        printf("%s: argument must be a PID or %%jobid\n", cmd);
+        return;
+    }
+
+    // Determine whether the job ID or process ID corresponds to a valid job, and print an error otherwise.
+    // How to check whether it's fg or bg?
+    // How to check if it's a job id or pid? Jobid needs "%"
+
+    int isFgorBg;
+
+    if (strcmp(argv[0], "fg") == 0)
+    {
+        isFgorBg = FG; // FG State
+    }
+    else
+    {
+        isFgorBg = BG; // BG State
+    }
+
+    // printf("FG here: %d; BG here: %d", isFg, isBg);
+
+    int isPid;
+    int isJobid;
+
+    if (strstr(argv[0], "%") == NULL)
+    {
+        isPid = 0;
+        isJobid = 1;
+    }
+    else
+    {
+        isPid = 1;
+        isJobid = 0;
+    }
+
+    // printf("PID: %d", isPid);
+    // printf("JobId: %d", isJobid);
+
+    char *count = argv[1];
+
+    if (isJobid)
+    {
+        count = (argv[1] + 1);
+        // printf("%d", count);
+    }
+
+    struct job_t *currJob;
+    pid_t pid;
+    int val = strtol(count, NULL, 10); // Convert from string to long int
+    // printf("%d", val); // Check if number is right
+
+    if (isJobid)
+    {
+        currJob = getjobjid(jobs, val);
+
+        if (!currJob)
+        {
+            printf("%c%d: ", '%', val);
+            printf("No such job\n"); // TODO: Why is this not printing the number correctly?
+            return;
+        }
+
+        pid = currJob->pid;
+
+        if (currJob->state == ST)
+        {
+            kill((-1 * pid), SIGCONT); // Send a SIGCONT signal to the process group of the job
+        }
+
+        // printf("%d", isFgorBg)
+
+        currJob->state = isFgorBg;
+    }
+    else
+    {
+
+        pid = val;
+
+        currJob = getjobpid(jobs, pid);
+
+        if (!currJob)
+        {
+            printf("I'm here!");
+            printf("(%d): No such process\n", pid);
+            return;
+        }
+
+        if (currJob->state = ST)
+        {
+            kill((-1 * pid), SIGCONT);
+        }
+
+        // printf("%d", isFgorBg)
+
+        currJob->state = isFgorBg;
+    }
+
+    int jobId;
+    char *cmdline;
+
+    if (isFgorBg == BG)
+    {
+        jobId = currJob->jid;
+        cmdline = currJob->cmdline;
+        printf("[%d] (%d) %s\n", jobId, pid, cmdline);
+    }
+
+    // if fg was specified, then wait on the job
+    waitfg(pid);
     return;
 }
 
@@ -544,10 +684,16 @@ void sigchld_handler(int sig)
 void sigint_handler(int sig)
 
 {
-    if (verbose)
-    {
-        printf("sigint_handler: entering\n");
-    }
+    // if (verbose)
+    // {
+    //     printf("sigint_handler: entering\n");
+    // }
+
+    pid_t pid;
+    pid = fgpid(jobs);
+    // printf(pid)
+    kill((-1 * pid), SIGINT); // Why is it not positive?
+
     return;
 }
 
@@ -558,10 +704,17 @@ void sigint_handler(int sig)
  */
 void sigtstp_handler(int sig)
 {
-    if (verbose)
-    {
-        printf("sigtsp_handler: entering\n");
-    }
+    // if (verbose)
+    // {
+    //     printf("sigtsp_handler: entering\n");
+    // }
+
+    pid_t pid;
+    pid = fgpid(jobs);
+    // printf(pid)
+    kill((-1 * pid), SIGTSTP);
+    sleep(1);
+
     return;
 }
 
