@@ -266,6 +266,7 @@ void eval(char *cmdline)
             }
         }
 
+        // Setting states
         if (!bg)
         {
             state = FG;
@@ -480,6 +481,7 @@ void do_bgfg(char **argv)
         int i = 1;
         while (argv[1][i] != 0)
         {
+
             // printf("%d", argv[1][0]);
             if (!isdigit(argv[1][i]))
             {
@@ -514,18 +516,18 @@ void do_bgfg(char **argv)
 
     // printf("FG here: %d; BG here: %d", isFg, isBg);
 
-    int isPid;
+    // int isPid;
     int isJobid;
 
-    if (strstr(argv[0], "%") == NULL)
+    if (strstr(argv[1], "%") == NULL)
     {
-        isPid = 0;
-        isJobid = 1;
+        // isPid = 1;
+        isJobid = 0;
     }
     else
     {
-        isPid = 1;
-        isJobid = 0;
+        // isPid = 0;
+        isJobid = 1;
     }
 
     // printf("PID: %d", isPid);
@@ -575,12 +577,12 @@ void do_bgfg(char **argv)
 
         if (!currJob)
         {
-            printf("I'm here!");
+            // printf("I'm here!");
             printf("(%d): No such process\n", pid);
             return;
         }
 
-        if (currJob->state = ST)
+        if ((currJob->state = ST))
         {
             kill((-1 * pid), SIGCONT);
         }
