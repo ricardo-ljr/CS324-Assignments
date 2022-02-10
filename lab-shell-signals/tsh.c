@@ -543,7 +543,8 @@ void do_bgfg(char **argv)
 
     struct job_t *currJob;
     pid_t pid;
-    int val = strtol(count, NULL, 10); // Convert from string to long int
+
+    int val = atoi(count); // Convert from string to int
     // printf("%d", val); // Check if number is right
 
     if (isJobid)
