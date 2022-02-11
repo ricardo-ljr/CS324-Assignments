@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     /* Install the signal handlers */
 
     /* These are the ones you will need to implement */
-    Signal(SIGINT, sigint_handler); /* ctrl-c */ // Remember to uncomment this when it's time
+    Signal(SIGINT, sigint_handler); /* ctrl-c */ // TODO: Remember to uncomment this when it's time
     Signal(SIGTSTP, sigtstp_handler);            /* ctrl-z */
     Signal(SIGCHLD, sigchld_handler);            /* Terminated or stopped child */
 
@@ -190,8 +190,8 @@ void eval(char *cmdline)
     sigfillset(&set);
     sigemptyset(&oset);
     sigaddset(&oset, SIGCHLD);
-    // sigaddset(&mask, SIGINT);
-    // sigaddset(&mask, SIGTSTP);
+    // sigaddset(&oset, SIGINT);
+    // sigaddset(&oset, SIGTSTP);
 
     if (!builtin_cmd(argv))
     {
@@ -544,8 +544,8 @@ void do_bgfg(char **argv)
     struct job_t *currJob;
     pid_t pid;
 
-    int val = atoi(count); // Convert from string to int
-    // printf("%d", val); // Check if number is right
+    int val = atoi(count); // Convert to int
+    // printf("%d", val); // Check if number corresponds right
 
     if (isJobid)
     {
@@ -560,7 +560,7 @@ void do_bgfg(char **argv)
 
         pid = currJob->pid;
 
-        if (currJob->state == ST)
+        if (currJob->state == ST) // ctrl + z state
         {
             kill((-1 * pid), SIGCONT); // Send a SIGCONT signal to the process group of the job
         }
@@ -583,7 +583,7 @@ void do_bgfg(char **argv)
             return;
         }
 
-        if ((currJob->state = ST))
+        if ((currJob->state = ST)) // ctrl + z state
         {
             kill((-1 * pid), SIGCONT);
         }
@@ -656,7 +656,7 @@ void sigchld_handler(int sig)
 
             if (jobs[jid - 1].state == FG)
             {
-                jobs[jid - 1].state = ST; // ctrl-z FG -> ST, changing state of current job
+                jobs[jid - 1].state = ST; // ctrl+z FG -> ST, changing state of current job
             }
 
             printf("Job [%d] (%d) stopped by signal %d\n", jid, pid, WSTOPSIG(status)); // Number of signal that caused child process to stop
