@@ -51,9 +51,9 @@ int main(int argc, char *argv[])
 	/* Obtain address(es) matching host/port */
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-	hints.ai_family = af;			 /* Allow IPv4, IPv6, or both, depending on
+	hints.ai_family = af;			/* Allow IPv4, IPv6, or both, depending on
 				    what was specified on the command line. */
-	hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0; /* Any protocol */
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	/* getaddrinfo() returns a list of address structures.
 	   Try each address until we successfully connect(2).
 	   If socket(2) (or connect(2)) fails, we (close the socket
-	   and) try the next address.  */
+	   and) try the next address. */
 
 	/* SECTION B - pre-socket setup; getaddrinfo() */
 
@@ -99,76 +99,32 @@ int main(int argc, char *argv[])
 	/* Send remaining command-line arguments as separate
 	   datagrams, and read responses from server */
 
-	// sleep(30);
-
-	char buffer[4096];
-	int numBytes = 0;
-	int totalBytes = 0;
-
-	// while (numBytes = fread(buffer, sizeof *buffer, 4096, stdin) == 4096)
-	// {
-	// 	totalBytes += numBytes;
-	// }
-
-	numBytes = fread(buffer, sizeof *buffer, 4096, stdin);
-
-	int temp = 0;
-	int bytesWritten = 0;
-
-	while ((temp = write(sfd, &buffer[0] + bytesWritten, (numBytes - bytesWritten))) > 0)
+	for (j = hostindex + 2; j < argc; j++)
 	{
-		bytesWritten += temp;
+		len = strlen(argv[j]) + 1;
+		/* +1 for terminating null byte */
 
-		if (bytesWritten >= numBytes)
+		if (len + 1 > BUF_SIZE)
 		{
-			break;
+			fprintf(stderr,
+					"Ignoring long message in argument %d\n", j);
+			continue;
 		}
-	}
 
-	char buffer2[16384];
-	int bytesRead = 0;
-
-	temp = 0;
-	while ((temp = read(sfd, &buffer2[0] + bytesRead, 16384)) != 0)
-	{
-		bytesRead += temp;
-		if (bytesRead >= 16384)
+		if (write(sfd, argv[j], len) != len)
 		{
-			break;
+			fprintf(stderr, "partial/failed write\n");
+			exit(EXIT_FAILURE);
 		}
+
+		// nread = read(sfd, buf, BUF_SIZE);
+		// if (nread == -1) {
+		// 	perror("read");
+		// 	exit(EXIT_FAILURE);
+		// }
+
+		// printf("Received %zd bytes: %s\n", nread, buf);
 	}
-
-	buffer[bytesWritten] = '\0';
-
-	write(1, buffer2, bytesRead);
-
-	// for (j = hostindex + 2; j < argc; j++)
-	// {
-	// 	len = strlen(argv[j]) + 1;
-	// 	/* +1 for terminating null byte */
-
-	// 	if (len + 1 > BUF_SIZE)
-	// 	{
-	// 		fprintf(stderr,
-	// 				"Ignoring long message in argument %d\n", j);
-	// 		continue;
-	// 	}
-
-	// 	if (write(sfd, argv[j], len) != len)
-	// 	{
-	// 		fprintf(stderr, "partial/failed write\n");
-	// 		exit(EXIT_FAILURE);
-	// 	}
-
-	// 	// nread = read(sfd, buf, BUF_SIZE);
-	// 	// if (nread == -1)
-	// 	// {
-	// 	// 	perror("read");
-	// 	// 	exit(EXIT_FAILURE);
-	// 	// }
-
-	// 	// printf("Received %zd bytes: %s\n", nread, buf);
-	// }
 
 	exit(EXIT_SUCCESS);
 }

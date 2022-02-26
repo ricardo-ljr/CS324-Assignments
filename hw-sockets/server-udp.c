@@ -52,10 +52,10 @@ int main(int argc, char *argv[])
 	/* As a server, we want to exercise control over which protocol (IPv4
 	   or IPv6) is being used, so we specify AF_INET or AF_INET6 explicitly
 	   in hints, depending on what is passed on on the command line. */
-	hints.ai_family = af;			 /* Choose IPv4 or IPv6 */
-	hints.ai_socktype = SOCK_STREAM; /* Datagram socket */
-	hints.ai_flags = AI_PASSIVE;	 /* For wildcard IP address */
-	hints.ai_protocol = 0;			 /* Any protocol */
+	hints.ai_family = af;			/* Choose IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
+	hints.ai_flags = AI_PASSIVE;	/* For wildcard IP address */
+	hints.ai_protocol = 0;			/* Any protocol */
 	hints.ai_canonname = NULL;
 	hints.ai_addr = NULL;
 	hints.ai_next = NULL;
@@ -97,47 +97,37 @@ int main(int argc, char *argv[])
 
 	/* Read datagrams and echo them back to sender */
 
-	listen(sfd, 100);
-	int new_socket;
 	for (;;)
 	{
-
 		peer_addr_len = sizeof(struct sockaddr_storage);
-		new_socket = accept(sfd, (struct sockaddr *)&peer_addr, &peer_addr_len);
 
-		for (;;)
-		{
-			peer_addr_len = sizeof(struct sockaddr_storage);
+		// printf("before recvfrom()\n");
+		// fflush(stdout);
 
-			// printf("before recvfrom()\n");
-			// fflush(stdout);
+		nread = recvfrom(sfd, buf, BUF_SIZE, 0,
+						 (struct sockaddr *)&peer_addr, &peer_addr_len);
+		sleep(2);
 
-			nread = recv(new_socket, buf, BUF_SIZE, 0);
-			sleep(2);
+		// printf("after recvfrom()\n");
+		// fflush(stdout);
+		if (nread == -1)
+			continue; /* Ignore failed request */
 
-			if (nread == 0)
-			{
-				close(new_socket);
-				break;
-			}
+		char host[NI_MAXHOST], service[NI_MAXSERV];
 
-			if (nread == -1)
-				continue; /* Ignore failed request */
+		s = getnameinfo((struct sockaddr *)&peer_addr,
+						peer_addr_len, host, NI_MAXHOST,
+						service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
 
-			char host[NI_MAXHOST], service[NI_MAXSERV];
+		if (s == 0)
+			printf("Received %zd bytes from %s:%s\n",
+				   nread, host, service);
+		else
+			fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
 
-			s = getnameinfo((struct sockaddr *)&peer_addr,
-							peer_addr_len, host, NI_MAXHOST,
-							service, NI_MAXSERV, NI_NUMERICSERV | NI_NUMERICHOST);
-
-			if (s == 0)
-				printf("Received %zd bytes from %s:%s\n",
-					   nread, host, service);
-			else
-				fprintf(stderr, "getnameinfo: %s\n", gai_strerror(s));
-
-			if (send(new_socket, buf, nread, 0) != nread)
-				fprintf(stderr, "Error sending response\n");
-		}
+		if (sendto(sfd, buf, nread, 0,
+				   (struct sockaddr *)&peer_addr,
+				   peer_addr_len) != nread)
+			fprintf(stderr, "Error sending response\n");
 	}
 }
