@@ -219,8 +219,7 @@ int main(int argc, char *argv[])
 				ipv4addr.sin_port = newPort;
 				hints.ai_family = AF_INET;
 			}
-
-			if (strcmp(whichIP, "IPv6") == 0)
+			else
 			{
 				ipv6addr.sin6_family = AF_INET6;
 				ipv6addr.sin6_addr = in6addr_any;
@@ -296,7 +295,6 @@ int main(int argc, char *argv[])
 			}
 
 			int len = sizeof(struct sockaddr_storage);
-
 			bzero(&buf2[0], 64);
 
 			for (int i = 0; i < ntohs(numDatagrams); i++)
@@ -327,7 +325,6 @@ int main(int argc, char *argv[])
 			connect(sfd, rp->ai_addr, (socklen_t)len);
 			send(sfd, (&newNonceVals[0]), 4, 0);
 			bzero(&buf2[0], 64);
-
 			recv(sfd, &buf2[0], 64, 0);
 
 			free(newNonceVals);
