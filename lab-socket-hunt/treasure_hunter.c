@@ -2,7 +2,7 @@
 // by running `id -u` on a CS lab machine.
 #define USERID 0x6CB368C2
 // hex value of my UserID: 0x6cb368c2
-// hex value to try another userid: 0x0adebef9
+
 #define BUFSIZE 8
 // Nonce: 07 4F  7C F7
 
@@ -18,8 +18,9 @@
 // int verbose = 0;
 
 /* PROBLEMS: 
-1. When I increment 0XFF, rather than giving 0x100, it returns 0x0, which ends up sending the wrong nonce value
-2. 
+1. When I increment 0XFF, rather than giving 0x100, it returns 0x0, which ends up sending the wrong nonce value - Fixed
+2. My port is being unrecogninzed on level three even though it=s sending the correct one - Fixed
+3. Why is level 0 not printing the correct output on certain seeds? - Fixed
 */
 
 void print_bytes(unsigned char *bytes, int byteslen);
@@ -283,8 +284,7 @@ int main(int argc, char *argv[])
 				hints.ai_family = AF_INET;
 				bind(sfd, (struct sockaddr *)&ipv4addr, sizeof(ipv4addr));
 			}
-
-			if (strcmp(whichIP, "IPv6") == 0)
+			else
 			{
 				ipv6addr.sin6_family = AF_INET6;
 				ipv6addr.sin6_addr = in6addr_any;
@@ -305,8 +305,7 @@ int main(int argc, char *argv[])
 					// printf("%d\n", htons(ipv4addr2.sin_port));
 					newNonce += htons(ipv4addr2.sin_port);
 				}
-
-				if (strcmp(whichIP, "IPv6") == 0)
+				else
 				{
 					recvfrom(sfd, &buf2[0], 64, 0, (struct sockaddr *)&ipv6addr2, (socklen_t *)&len);
 					// printf("%d\n", htons(ipv6addr2.sin6_port));
@@ -331,11 +330,15 @@ int main(int argc, char *argv[])
 
 			free(newNonceVals);
 			chunkSize = (unsigned int)buf2[0];
-
 			continue;
 		}
 		if (opCode == 4)
 		{
+
+			// Switch address families from using IPv4 (AF_INET) to IPv6 (AF_INET6) or vice-versa, and use the port specified
+			// by the next two bytes (n + 2 and n + 3), which is an unsigned short in network byte order, as the new remote port
+			// (i.e., like op-code 1).
+
 			close(sfd);
 			struct addrinfo *new_results;
 
@@ -350,33 +353,32 @@ int main(int argc, char *argv[])
 			hints.ai_flags = 0;
 			hints.ai_protocol = 0;
 
+			// Switching address families
 			if (strcmp(whichIP, "IPv6") == 0)
 			{
 				hints.ai_family = AF_INET;
 				whichIP = "IPv4";
 			}
-			else if (strcmp(whichIP, "IPv4") == 0)
+			else
 			{
 				hints.ai_family = AF_INET6;
 				whichIP = "IPv6";
 			}
 
+			// Here you must call getaddrinfo(), and you must create a new socket with socket()
+
 			s = getaddrinfo(argv[1], newPortVal, &hints, &new_results);
 
-			if (s != 0)
-			{
-				fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-				exit(EXIT_FAILURE);
-			}
+			// if (s != 0)
+			// {
+			// 	fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
+			// 	exit(EXIT_FAILURE);
+			// }
 
+			// New socket
 			for (rp = new_results; rp != NULL; rp = rp->ai_next)
 			{
 				sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-
-				if (sfd == -1)
-				{
-					continue;
-				}
 
 				if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1)
 				{
@@ -390,8 +392,7 @@ int main(int argc, char *argv[])
 						getsockname(sfd, (struct sockaddr *)&local, &addr_len);
 						currPort1 = local.sin_port;
 					}
-
-					if (strcmp(whichIP, "IPv6") == 0)
+					else
 					{
 						struct sockaddr_in6 local;
 						unsigned int addr_len = sizeof(local);
