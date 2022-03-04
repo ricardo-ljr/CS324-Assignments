@@ -19,8 +19,9 @@
 
 /* PROBLEMS: 
 1. When I increment 0XFF, rather than giving 0x100, it returns 0x0, which ends up sending the wrong nonce value - Fixed
-2. My port is being unrecogninzed on level three even though it=s sending the correct one - Fixed
-3. Why is level 0 not printing the correct output on certain seeds? - Fixed
+2. Apparently I'm not getting the full response back but no errors are thrown. Why? - Fixed, switched to malloc
+3. My port is being unrecogninzed on level three even though it=s sending the correct one - Fixed
+4. Why is level 0 not printing the correct output on certain seeds? - Fixed
 */
 
 void print_bytes(unsigned char *bytes, int byteslen);
