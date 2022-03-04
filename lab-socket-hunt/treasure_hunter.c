@@ -62,12 +62,14 @@ int main(int argc, char *argv[])
 	// unsigned char treasure[1024];
 
 	unsigned char *buf2 = malloc(1024); // initializing new buffer to receive message, does this work better?
+	// unsigned char *buf2[64] = {0, 0, 0, 0};
 
 	// int treasureIndex = 0;
 
 	// struct addrinfo hints;
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
+	// unsigned char *port[64]; // not working?
 	char *port = malloc(128);
 
 	int s, sfd;
@@ -117,7 +119,7 @@ int main(int argc, char *argv[])
 	send(sfd, buf, 8, 0); // sending 8 bytes
 	recv(sfd, buf2, 64, 0);
 
-	free(buf);
+	// free(buf);
 	freeaddrinfo(result);
 
 	// unsigned int nonce;
