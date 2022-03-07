@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 	send(sfd, buf, 8, 0); // sending 8 bytes
 	recv(sfd, buf2, 64, 0);
 
-	// free(buf);
+	free(buf);
 	freeaddrinfo(result);
 
 	// unsigned int nonce;
