@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 	unsigned short s2 = htonl(s1);	   // Changing seed
 	// unsigned short s2 = htons(s1);	   // This doesn't work on my user id
 
-	unsigned int user_id = htonl(0x6cb368c2);
+	unsigned int user_id = htonl(USERID);
 
 	// unsigned char buf[64];
 	unsigned char *buf = malloc(1024);
@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 	unsigned char *treasure = malloc(1024); // keep track of treasure
 	int treasureLength = 0;
 
-	int chunkSize = (int)buf2[0];
+	int chunkSize = (int)buf2[0]; // initial chunksize
 
 	// printf("Chunk size: %d\n", chunkSize);
 
@@ -270,8 +270,8 @@ int main(int argc, char *argv[])
 
 			struct sockaddr_in ipv4addr;
 			struct sockaddr_in6 ipv6addr;
-			struct sockaddr_in ipv4addr2;
-			struct sockaddr_in6 ipv6addr2;
+			struct sockaddr_in rcv_ipv4addr;
+			struct sockaddr_in6 rcv_ipv6addr;
 
 			unsigned short numDatagrams;
 
@@ -295,22 +295,21 @@ int main(int argc, char *argv[])
 				bind(sfd, (struct sockaddr *)&ipv6addr, sizeof(ipv6addr));
 			}
 
-			int len = sizeof(struct sockaddr_storage);
-			bzero(&buf2[0], 64);
+			socklen_t len = sizeof(struct sockaddr_storage);
 
 			for (int i = 0; i < ntohs(numDatagrams); i++)
 			{
 				if (strcmp(whichIP, "IPv4") == 0)
 				{
-					recvfrom(sfd, &buf2[0], 64, 0, (struct sockaddr *)&ipv4addr2, (socklen_t *)&len);
-					// printf("%d\n", htons(ipv4addr2.sin_port));
-					newNonce += htons(ipv4addr2.sin_port);
+					recvfrom(sfd, &buf2[0], 64, 0, (struct sockaddr *)&rcv_ipv4addr, &len);
+					// printf("%d\n", htons(rcv_ipv4addr.sin_port));
+					newNonce += htons(rcv_ipv4addr.sin_port);
 				}
 				else
 				{
-					recvfrom(sfd, &buf2[0], 64, 0, (struct sockaddr *)&ipv6addr2, (socklen_t *)&len);
-					// printf("%d\n", htons(ipv6addr2.sin6_port));
-					newNonce += htons(ipv6addr2.sin6_port);
+					recvfrom(sfd, &buf2[0], 64, 0, (struct sockaddr *)&rcv_ipv6addr, &len);
+					// printf("%d\n", htons(rcv_ipv6addr.sin6_port));
+					newNonce += htons(rcv_ipv6addr.sin6_port);
 				}
 			}
 
@@ -318,14 +317,12 @@ int main(int argc, char *argv[])
 			// printf("%d\n", newNonce);
 
 			int networkNonce = ntohl(newNonce); // TODO:
-
 			unsigned char *newNonceVals = malloc(128);
 
 			memcpy(&newNonceVals[0], &networkNonce, 4);
 
-			connect(sfd, rp->ai_addr, (socklen_t)len);
+			connect(sfd, rp->ai_addr, len);
 			send(sfd, (&newNonceVals[0]), 4, 0);
-			bzero(&buf2[0], 64);
 			recv(sfd, &buf2[0], 64, 0);
 
 			free(newNonceVals);
@@ -368,12 +365,6 @@ int main(int argc, char *argv[])
 			// Here you must call getaddrinfo(), and you must create a new socket with socket()
 
 			s = getaddrinfo(argv[1], newPortVal, &hints, &new_results);
-
-			// if (s != 0)
-			// {
-			// 	fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-			// 	exit(EXIT_FAILURE);
-			// }
 
 			// New socket
 			for (rp = new_results; rp != NULL; rp = rp->ai_next)
