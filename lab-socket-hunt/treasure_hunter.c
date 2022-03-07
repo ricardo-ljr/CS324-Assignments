@@ -40,7 +40,8 @@ int main(int argc, char *argv[])
 	unsigned int user_id = htonl(USERID);
 
 	// unsigned char buf[64];
-	unsigned char *buf = malloc(1024);
+	unsigned char *buf;
+	buf = (unsigned char *)malloc(1024);
 
 	// converstin see from string ton int to hex network byte order
 
@@ -62,24 +63,26 @@ int main(int argc, char *argv[])
 	// unsigned char buf2[64];
 	// unsigned char treasure[1024];
 
-	unsigned char *buf2 = malloc(1024); // initializing new buffer to receive message, does this work better?
-	// unsigned char *buf2[64] = {0, 0, 0, 0};
+	unsigned char *buf2; // initializing new buffer to receive message, does this work better?
+	buf2 = (unsigned char *)malloc(1024);
+	// unsigned char buf2[64] = {0, 0, 0, 0};
 
 	// int treasureIndex = 0;
 
 	// struct addrinfo hints;
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
-	// unsigned char *port[64]; // not working?
-	char *port = malloc(128);
+	// unsigned char port[64]; // not working?
+	char *port;
+	port = (char *)malloc(1024);
 
-	int s, sfd;
+	int s, sfd, af;
 
 	unsigned int currPort1;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
-
-	hints.ai_family = AF_INET;		/* Allow IPv4, IPv6, or both, depending on what was specified on the command line. */
+	af = AF_INET;
+	hints.ai_family = af;			/* Allow IPv4, IPv6, or both, depending on what was specified on the command line. */
 	hints.ai_socktype = SOCK_DGRAM; /* Datagram socket */
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;
@@ -124,15 +127,14 @@ int main(int argc, char *argv[])
 	freeaddrinfo(result);
 
 	// unsigned int nonce;
-	unsigned char *treasure = malloc(1024); // keep track of treasure
+	// unsigned char treasure[1024]; // keep track of treasure
+	unsigned char *treasure;
+	treasure = (unsigned char *)malloc(1024);
 	int treasureLength = 0;
 
 	int chunkSize = (int)buf2[0]; // initial chunksize
-
-	// printf("Chunk size: %d\n", chunkSize);
-
 	int opCode;
-	char *whichIP = "IPv4";
+	// printf("Chunk size: %d\n", chunkSize);
 
 	while (chunkSize != 0)
 	{
@@ -179,10 +181,12 @@ int main(int argc, char *argv[])
 		{
 			struct addrinfo *new_results;
 			unsigned short newPort;
-			char *newPortvals = malloc(128);
+			char *newPortvals;
+			newPortvals = (char *)malloc(1024);
 
 			memcpy(&newPort, &buf2[chunkSize + 2], 2);
-			snprintf(newPortvals, 128, "%u", ntohs(newPort));
+			snprintf(newPortvals, 1024, "%u", ntohs(newPort)); // format to a string
+			// printf("%u\n", newPortVals);
 
 			s = getaddrinfo(argv[1], newPortvals, &hints, &new_results);
 
@@ -214,7 +218,8 @@ int main(int argc, char *argv[])
 
 			memcpy(&newPort, &buf2[chunkSize + 2], 2); // Reassigning port
 
-			if (strcmp(whichIP, "IPv4") == 0)
+			af = rp->ai_family;
+			if (af == AF_INET)
 			{
 				ipv4addr.sin_family = AF_INET;
 				ipv4addr.sin_port = newPort;
@@ -230,13 +235,20 @@ int main(int argc, char *argv[])
 
 			sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 
-			if (strcmp(whichIP, "IPv4") == 0)
+			af = rp->ai_family;
+			if (af == AF_INET)
 			{
-				bind(sfd, (struct sockaddr *)&ipv4addr, sizeof(ipv4addr));
+				if (bind(sfd, (struct sockaddr *)&ipv4addr, sizeof(ipv4addr)) < 0)
+				{
+					perror("bind()");
+				};
 			}
 			else
 			{
-				bind(sfd, (struct sockaddr *)&ipv6addr, sizeof(ipv6addr));
+				if (bind(sfd, (struct sockaddr *)&ipv6addr, sizeof(ipv6addr)) < 0)
+				{
+					perror("bind()");
+				};
 			}
 
 			s = getaddrinfo(argv[1], port, &hints, &new_results);
@@ -279,7 +291,8 @@ int main(int argc, char *argv[])
 
 			sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 
-			if (strcmp(whichIP, "IPv4") == 0)
+			af = rp->ai_family;
+			if (af == AF_INET)
 			{
 				ipv4addr.sin_family = AF_INET;
 				ipv4addr.sin_port = currPort1;
@@ -299,7 +312,8 @@ int main(int argc, char *argv[])
 
 			for (int i = 0; i < ntohs(numDatagrams); i++)
 			{
-				if (strcmp(whichIP, "IPv4") == 0)
+				af = rp->ai_family;
+				if (af == AF_INET)
 				{
 					recvfrom(sfd, &buf2[0], 64, 0, (struct sockaddr *)&rcv_ipv4addr, &len);
 					// printf("%d\n", htons(rcv_ipv4addr.sin_port));
@@ -316,16 +330,16 @@ int main(int argc, char *argv[])
 			newNonce++;
 			// printf("%d\n", newNonce);
 
-			int networkNonce = ntohl(newNonce); // TODO:
-			unsigned char *newNonceVals = malloc(128);
+			int rcv_nonce = ntohl(newNonce); // TODO:
+			unsigned char *newNonceVals;
+			newNonceVals = (unsigned char *)malloc(1024);
 
-			memcpy(&newNonceVals[0], &networkNonce, 4);
+			memcpy(&newNonceVals[0], &rcv_nonce, 4);
 
 			connect(sfd, rp->ai_addr, len);
 			send(sfd, (&newNonceVals[0]), 4, 0);
 			recv(sfd, &buf2[0], 64, 0);
 
-			free(newNonceVals);
 			chunkSize = (unsigned int)buf2[0];
 			continue;
 		}
@@ -337,29 +351,32 @@ int main(int argc, char *argv[])
 			// (i.e., like op-code 1).
 
 			close(sfd);
+			struct sockaddr_in ipv4addr_local;
+			struct sockaddr_in6 ipv6addr_local;
 			struct addrinfo *new_results;
 
 			unsigned short newPort;
 
-			char *newPortVal = malloc(128);
+			char *newPortVal;
+			newPortVal = (char *)malloc(1024);
 
 			memcpy(&newPort, &buf2[chunkSize + 2], 2);
-			snprintf(newPortVal, 128, "%u", ntohs(newPort));
+			snprintf(newPortVal, 1024, "%u", ntohs(newPort));
+			// printf("%u\n", newPortVal);
 
 			hints.ai_socktype = SOCK_DGRAM;
 			hints.ai_flags = 0;
 			hints.ai_protocol = 0;
 
 			// Switching address families
-			if (strcmp(whichIP, "IPv6") == 0)
+			af = rp->ai_family;
+			if (af == AF_INET)
 			{
 				hints.ai_family = AF_INET;
-				whichIP = "IPv4";
 			}
 			else
 			{
 				hints.ai_family = AF_INET6;
-				whichIP = "IPv6";
 			}
 
 			// Here you must call getaddrinfo(), and you must create a new socket with socket()
@@ -376,19 +393,19 @@ int main(int argc, char *argv[])
 					port = newPortVal;
 
 					// Switching bettwen IPv4 and IPv6
-					if (strcmp(whichIP, "IPv4") == 0)
+					af = rp->ai_family;
+					socklen_t addr_len;
+					if (af == AF_INET)
 					{
-						struct sockaddr_in local;
-						unsigned int addr_len = sizeof(local);
-						getsockname(sfd, (struct sockaddr *)&local, &addr_len);
-						currPort1 = local.sin_port;
+						addr_len = sizeof(ipv4addr_local);
+						getsockname(sfd, (struct sockaddr *)&ipv4addr_local, &addr_len);
+						currPort1 = ipv4addr_local.sin_port;
 					}
 					else
 					{
-						struct sockaddr_in6 local;
-						unsigned int addr_len = sizeof(local);
-						getsockname(sfd, (struct sockaddr *)&local, &addr_len);
-						currPort1 = local.sin6_port;
+						addr_len = sizeof(ipv6addr_local);
+						getsockname(sfd, (struct sockaddr *)&ipv6addr_local, &addr_len);
+						currPort1 = ipv6addr_local.sin6_port;
 					}
 					break;
 				}
