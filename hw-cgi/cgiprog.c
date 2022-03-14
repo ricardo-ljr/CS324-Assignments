@@ -70,7 +70,7 @@ Threads: 9 total
 
 18. Once the slot is available, it is waiting on the slot to be filled with items
 
-? 19. 
+19. 
 
 Most Expensive -> Least Expensive
 
@@ -88,30 +88,17 @@ echoserverp -> echoservert -> echoservert_pre
 #include <string.h>
 #include <stdlib.h>
 
-#define MAXLINE 1000
-
-int main(int argc, char *argv[])
+int main(int argc, char **argv)
 {
 
-    char *buf, *p;
-    char arg1[MAXLINE], arg2[MAXLINE], content[MAXLINE];
-    int n1 = 0, n2 = 0;
+    char content[8192];
+    const char *buf = getenv("QUERY_STRING");
 
-    if ((buf = getenv("QUERY_STRING")) != NULL)
-    {
-        p = strchr(buf, '&');
-        *p = '\0';
-        strcpy(arg1, buf);
-        strcpy(arg2, p + 1);
-        n1 = atoi(arg1);
-        n2 = atoi(arg2);
-    }
-
-    sprintf(content, "The query string is: %s\r\n", buf);
+    sprintf(content, "The query string is: %s", buf);
 
     printf("Content-type: text/plain\r\n");
     printf("Content-length: %d\r\n\r\n", (int)strlen(content));
-    printf("%s\r\n", content);
+    printf("%s\n", content);
     fflush(stdout);
 
     return 0;
